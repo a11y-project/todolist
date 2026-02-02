@@ -36,7 +36,7 @@ const TaskItem = ({ task, onEdit, onDelete, onStatusChange }) => {
     const isOverdue = task.deadline && new Date(task.deadline) < new Date() && task.status !== 'completed';
 
     return (
-        <div className={`bg-white rounded-lg shadow p-4 border-l-4 ${
+        <li className={`bg-white rounded-lg shadow p-4 border-l-4 ${
             task.status === 'completed' ? 'border-green-500 opacity-75' :
             isOverdue ? 'border-red-500' :
             task.priority === 'high' ? 'border-red-400' :
@@ -45,9 +45,9 @@ const TaskItem = ({ task, onEdit, onDelete, onStatusChange }) => {
             <div className="flex items-start justify-between">
                 <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                        <h3 className={`text-lg font-medium ${task.status === 'completed' ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+                        <h2 className={`text-lg font-medium ${task.status === 'completed' ? 'line-through text-gray-500' : 'text-gray-900'}`}>
                             {task.title}
-                        </h3>
+                        </h2>
                         {task.category && (
                             <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs rounded-full">
                                 {task.category}
@@ -114,7 +114,7 @@ const TaskItem = ({ task, onEdit, onDelete, onStatusChange }) => {
                     </button>
                 </div>
             </div>
-        </div>
+        </li>
     );
 };
 

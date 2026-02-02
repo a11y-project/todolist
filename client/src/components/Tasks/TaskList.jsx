@@ -191,7 +191,7 @@ const TaskList = () => {
                     <p className="text-gray-500">Aucune tâche trouvée. Créez votre première tâche !</p>
                 </div>
             ) : (
-                <div className="space-y-4" role="list" aria-label="Liste des tâches">
+                <ul className="space-y-4">
                     {tasks.map(task => (
                         <TaskItem
                             key={task.id}
@@ -201,7 +201,7 @@ const TaskList = () => {
                             onStatusChange={handleStatusChange}
                         />
                     ))}
-                </div>
+                </ul>
             )}
 
             <div className="mt-6 text-center text-sm text-gray-500">
