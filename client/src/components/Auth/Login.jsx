@@ -21,7 +21,7 @@ const Login = () => {
             await login(email, password, rememberMe);
             navigate('/');
         } catch (err) {
-            setError(err.response?.data?.message || 'Échec de la connexion');
+            setError(err.message || 'Échec de la connexion');
         } finally {
             setLoading(false);
         }

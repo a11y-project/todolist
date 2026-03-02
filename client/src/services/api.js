@@ -1,59 +1,65 @@
-import axios from 'axios';
+import { supabase } from '../lib/supabase';
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
-
-const api = axios.create({
-    baseURL: API_URL,
-    headers: {
-        'Content-Type': 'application/json'
-    }
-});
-
-// Helper pour récupérer le token depuis les deux stockages
-const getToken = () => {
-    return localStorage.getItem('token') || sessionStorage.getItem('token');
-};
-
-// Add token to requests
-api.interceptors.request.use((config) => {
-    const token = getToken();
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-});
-
-// Handle token expiration
-api.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        if (error.response?.status === 401) {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            localStorage.removeItem('rememberMe');
-            sessionStorage.removeItem('token');
-            sessionStorage.removeItem('user');
-            window.location.href = '/login';
-        }
-        return Promise.reject(error);
-    }
-);
-
-// Auth API
-export const authAPI = {
-    register: (data) => api.post('/auth/register', data),
-    login: (data) => api.post('/auth/login', data),
-    getProfile: () => api.get('/auth/profile')
-};
-
-// Tasks API
 export const tasksAPI = {
-    getAll: (params) => api.get('/tasks', { params }),
-    getOne: (id) => api.get(`/tasks/${id}`),
-    create: (data) => api.post('/tasks', data),
-    update: (id, data) => api.put(`/tasks/${id}`, data),
-    delete: (id) => api.delete(`/tasks/${id}`),
-    getCategories: () => api.get('/tasks/categories')
+    getAll: async (filters = {}) => {
+        let query = supabase.from('tasks').select('*');
+
+        if (filters.status) query = query.eq('status', filters.status);
+        if (filters.priority) query = query.eq('priority', filters.priority);
+        if (filters.category) query = query.eq('category', filters.category);
+
+        const sortField = filters.sortBy || 'created_at';
+        const ascending = (filters.sortOrder || 'DESC').toUpperCase() === 'ASC';
+        query = query.order(sortField, { ascending });
+
+        const { data, error } = await query;
+        if (error) throw error;
+        return { data: { tasks: data } };
+    },
+
+    create: async (taskData) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data, error } = await supabase
+            .from('tasks')
+            .insert({ ...taskData, user_id: user.id })
+            .select()
+            .single();
+        if (error) throw error;
+        return { data: { task: data } };
+    },
+
+    update: async (id, taskData) => {
+        const { id: _id, user_id: _uid, created_at: _ca, ...updateData } = taskData;
+        const { data, error } = await supabase
+            .from('tasks')
+            .update(updateData)
+            .eq('id', id)
+            .select()
+            .single();
+        if (error) throw error;
+        return { data: { task: data } };
+    },
+
+    delete: async (id) => {
+        const { error } = await supabase
+            .from('tasks')
+            .delete()
+            .eq('id', id);
+        if (error) throw error;
+        return { data: {} };
+    },
+
+    getCategories: async () => {
+        const { data, error } = await supabase
+            .from('tasks')
+            .select('category')
+            .not('category', 'is', null);
+        if (error) throw error;
+        const categories = [...new Set(data.map(r => r.category))];
+        return { data: { categories } };
+    }
 };
 
-export default api;
+export const authAPI = {};
+
+export default {};

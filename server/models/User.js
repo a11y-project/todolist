@@ -4,27 +4,27 @@ const bcrypt = require('bcryptjs');
 class User {
     static async create(name, email, password) {
         const hashedPassword = await bcrypt.hash(password, 10);
-        const [result] = await pool.execute(
-            'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
+        const result = await pool.query(
+            'INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id',
             [name, email, hashedPassword]
         );
-        return result.insertId;
+        return result.rows[0].id;
     }
 
     static async findByEmail(email) {
-        const [rows] = await pool.execute(
-            'SELECT * FROM users WHERE email = ?',
+        const result = await pool.query(
+            'SELECT * FROM users WHERE email = $1',
             [email]
         );
-        return rows[0];
+        return result.rows[0];
     }
 
     static async findById(id) {
-        const [rows] = await pool.execute(
-            'SELECT id, name, email, created_at FROM users WHERE id = ?',
+        const result = await pool.query(
+            'SELECT id, name, email, created_at FROM users WHERE id = $1',
             [id]
         );
-        return rows[0];
+        return result.rows[0];
     }
 
     static async comparePassword(plainPassword, hashedPassword) {

@@ -72,7 +72,7 @@ const TaskList = () => {
             // Remettre le focus sur le bouton "Nouvelle Tâche"
             setTimeout(() => newTaskButtonRef.current?.focus(), 100);
         } catch (err) {
-            setError(err.response?.data?.message || 'Échec de la création de la tâche');
+            setError(err.message || 'Échec de la création de la tâche');
         }
     };
 
@@ -83,7 +83,7 @@ const TaskList = () => {
             fetchTasks();
             fetchCategories();
         } catch (err) {
-            setError(err.response?.data?.message || 'Échec de la modification de la tâche');
+            setError(err.message || 'Échec de la modification de la tâche');
         }
     };
 
@@ -95,7 +95,7 @@ const TaskList = () => {
             fetchTasks();
             fetchCategories();
         } catch (err) {
-            setError(err.response?.data?.message || 'Échec de la suppression de la tâche');
+            setError(err.message || 'Échec de la suppression de la tâche');
         }
     };
 
@@ -105,7 +105,7 @@ const TaskList = () => {
             await tasksAPI.update(id, { ...task, status: newStatus });
             fetchTasks();
         } catch (err) {
-            setError(err.response?.data?.message || 'Échec de la mise à jour du statut');
+            setError(err.message || 'Échec de la mise à jour du statut');
         }
     };
 

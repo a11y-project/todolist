@@ -3,42 +3,42 @@ const pool = require('../config/db');
 class Task {
     static async create(userId, taskData) {
         const { title, description, deadline, priority, category } = taskData;
-        const [result] = await pool.execute(
+        const result = await pool.query(
             `INSERT INTO tasks (user_id, title, description, deadline, priority, category)
-             VALUES (?, ?, ?, ?, ?, ?)`,
+             VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
             [userId, title, description || null, deadline || null, priority || 'medium', category || null]
         );
-        return this.findById(result.insertId);
+        return this.findById(result.rows[0].id);
     }
 
     static async findById(id) {
-        const [rows] = await pool.execute(
-            'SELECT * FROM tasks WHERE id = ?',
+        const result = await pool.query(
+            'SELECT * FROM tasks WHERE id = $1',
             [id]
         );
-        return rows[0];
+        return result.rows[0];
     }
 
     static async findByUserId(userId, filters = {}) {
-        let query = 'SELECT * FROM tasks WHERE user_id = ?';
+        let query = 'SELECT * FROM tasks WHERE user_id = $1';
         const params = [userId];
+        let paramIndex = 2;
 
         if (filters.status) {
-            query += ' AND status = ?';
+            query += ` AND status = $${paramIndex++}`;
             params.push(filters.status);
         }
 
         if (filters.priority) {
-            query += ' AND priority = ?';
+            query += ` AND priority = $${paramIndex++}`;
             params.push(filters.priority);
         }
 
         if (filters.category) {
-            query += ' AND category = ?';
+            query += ` AND category = $${paramIndex++}`;
             params.push(filters.category);
         }
 
-        // Sorting
         const sortField = filters.sortBy || 'created_at';
         const sortOrder = filters.sortOrder || 'DESC';
         const allowedSortFields = ['created_at', 'deadline', 'priority', 'title'];
@@ -50,21 +50,21 @@ class Task {
             query += ' ORDER BY created_at DESC';
         }
 
-        const [rows] = await pool.execute(query, params);
-        return rows;
+        const result = await pool.query(query, params);
+        return result.rows;
     }
 
     static async update(id, userId, taskData) {
         const { title, description, deadline, priority, status, category } = taskData;
 
-        const [result] = await pool.execute(
+        const result = await pool.query(
             `UPDATE tasks
-             SET title = ?, description = ?, deadline = ?, priority = ?, status = ?, category = ?
-             WHERE id = ? AND user_id = ?`,
+             SET title = $1, description = $2, deadline = $3, priority = $4, status = $5, category = $6
+             WHERE id = $7 AND user_id = $8`,
             [title, description || null, deadline || null, priority, status, category || null, id, userId]
         );
 
-        if (result.affectedRows === 0) {
+        if (result.rowCount === 0) {
             return null;
         }
 
@@ -72,19 +72,19 @@ class Task {
     }
 
     static async delete(id, userId) {
-        const [result] = await pool.execute(
-            'DELETE FROM tasks WHERE id = ? AND user_id = ?',
+        const result = await pool.query(
+            'DELETE FROM tasks WHERE id = $1 AND user_id = $2',
             [id, userId]
         );
-        return result.affectedRows > 0;
+        return result.rowCount > 0;
     }
 
     static async getCategories(userId) {
-        const [rows] = await pool.execute(
-            'SELECT DISTINCT category FROM tasks WHERE user_id = ? AND category IS NOT NULL',
+        const result = await pool.query(
+            'SELECT DISTINCT category FROM tasks WHERE user_id = $1 AND category IS NOT NULL',
             [userId]
         );
-        return rows.map(row => row.category);
+        return result.rows.map(row => row.category);
     }
 }
 
