@@ -1,19 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
+import DatePicker, { registerLocale } from 'react-datepicker';
+import { fr } from 'date-fns/locale/fr';
+import 'react-datepicker/dist/react-datepicker.css';
 
-// Helper pour obtenir la date d'aujourd'hui au format YYYY-MM-DD
-const getTodayDate = () => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-};
+registerLocale('fr', fr);
 
 const TaskForm = ({ task, onSubmit, onCancel }) => {
     const [formData, setFormData] = useState({
         title: '',
         description: '',
-        deadline: getTodayDate(),
+        deadline: new Date(),
         priority: 'medium',
         status: 'pending',
         category: ''
@@ -27,17 +23,16 @@ const TaskForm = ({ task, onSubmit, onCancel }) => {
             setFormData({
                 title: task.title || '',
                 description: task.description || '',
-                deadline: task.deadline ? task.deadline.slice(0, 10) : getTodayDate(),
+                deadline: task.deadline ? new Date(task.deadline) : new Date(),
                 priority: task.priority || 'medium',
                 status: task.status || 'pending',
                 category: task.category || ''
             });
         } else {
-            // Réinitialiser avec la date d'aujourd'hui pour une nouvelle tâche
             setFormData({
                 title: '',
                 description: '',
-                deadline: getTodayDate(),
+                deadline: new Date(),
                 priority: 'medium',
                 status: 'pending',
                 category: ''
@@ -45,21 +40,16 @@ const TaskForm = ({ task, onSubmit, onCancel }) => {
         }
     }, [task]);
 
-    // Focus sur le champ titre à l'ouverture
     useEffect(() => {
         if (titleInputRef.current) {
             titleInputRef.current.focus();
         }
     }, []);
 
-    // Gestion de la touche Escape
     useEffect(() => {
         const handleKeyDown = (e) => {
-            if (e.key === 'Escape') {
-                onCancel();
-            }
+            if (e.key === 'Escape') onCancel();
         };
-
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [onCancel]);
@@ -72,11 +62,10 @@ const TaskForm = ({ task, onSubmit, onCancel }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-
         try {
             await onSubmit({
                 ...formData,
-                deadline: formData.deadline || null
+                deadline: formData.deadline ? formData.deadline.toISOString() : null
             });
         } finally {
             setLoading(false);
@@ -128,13 +117,19 @@ const TaskForm = ({ task, onSubmit, onCancel }) => {
                     <label htmlFor="deadline" className="block text-sm font-medium text-gray-700 mb-1">
                         Échéance
                     </label>
-                    <input
+                    <DatePicker
                         id="deadline"
-                        type="date"
-                        name="deadline"
-                        value={formData.deadline}
-                        onChange={handleChange}
+                        selected={formData.deadline}
+                        onChange={(date) => setFormData(prev => ({ ...prev, deadline: date }))}
+                        locale="fr"
+                        dateFormat="dd MMMM yyyy"
+                        minDate={new Date()}
+                        showMonthDropdown
+                        showYearDropdown
+                        dropdownMode="select"
                         className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        wrapperClassName="w-full"
+                        placeholderText="Sélectionner une date"
                     />
                 </div>
 
