@@ -3,7 +3,10 @@
     "allow": [
       "Bash(curl -s -k -u \"buke1358:f7fT-PVeH-x4t\\(\" \"https://trefle.o2switch.net:2083/execute/Mysql/create_database?name=buke1358_todolist\")",
       "Bash(curl -s -k -u \"buke1358:f7fT-PVeH-x4t\\(\" \"https://trefle.o2switch.net:2083/execute/Mysql/create_user?name=buke1358_todouser&password=TodoList2024!Secure\")",
-      "Bash(curl -s -k -u \"buke1358:f7fT-PVeH-x4t\\(\" -F \"file=@C:/wamp64/www/todolist/server/server.js\" \"https://trefle.o2switch.net:2083/execute/Fileman/upload_files?dir=/home/buke1358/todolist.accessiproject.fr/api\")"
+      "Bash(curl -s -k -u \"buke1358:f7fT-PVeH-x4t\\(\" -F \"file=@C:/wamp64/www/todolist/server/server.js\" \"https://trefle.o2switch.net:2083/execute/Fileman/upload_files?dir=/home/buke1358/todolist.accessiproject.fr/api\")",
+      "Bash(npm:*)",
+      "Bash(node:*)",
+      "Bash(npm run:*)"
     ]
   }
 }
