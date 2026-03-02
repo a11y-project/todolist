@@ -24,5 +24,7 @@ Thumbs.db
 *.tmp
 *.temp
 
-# o2switch credentials (sensible)
+# Fichiers sensibles locaux
 o2switch.txt
+client/.env
+CREDENTIALS.txt
