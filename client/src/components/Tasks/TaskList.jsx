@@ -12,11 +12,10 @@ const TaskList = () => {
     const [showForm, setShowForm] = useState(false);
     const [editingTask, setEditingTask] = useState(null);
     const [filters, setFilters] = useState({
-        status: '',
         priority: '',
         category: '',
-        sortBy: 'created_at',
-        sortOrder: 'DESC'
+        sortBy: 'deadline',
+        sortOrder: 'ASC'
     });
 
     const formContainerRef = useRef(null);
@@ -26,7 +25,6 @@ const TaskList = () => {
         try {
             setLoading(true);
             const params = {};
-            if (filters.status) params.status = filters.status;
             if (filters.priority) params.priority = filters.priority;
             if (filters.category) params.category = filters.category;
             params.sortBy = filters.sortBy;
@@ -99,13 +97,14 @@ const TaskList = () => {
         }
     };
 
-    const handleStatusChange = async (id, newStatus) => {
+    const handlePriorityChange = async (id, newPriority) => {
+        const previous = tasks.find(t => t.id === id);
+        setTasks(prev => prev.map(t => t.id === id ? { ...t, priority: newPriority } : t));
         try {
-            const task = tasks.find(t => t.id === id);
-            await tasksAPI.update(id, { ...task, status: newStatus });
-            fetchTasks();
+            await tasksAPI.update(id, { ...previous, priority: newPriority });
         } catch (err) {
-            setError(err.message || 'Échec de la mise à jour du statut');
+            setTasks(prev => prev.map(t => t.id === id ? previous : t));
+            setError(err.message || 'Échec de la mise à jour de la priorité');
         }
     };
 
@@ -169,6 +168,7 @@ const TaskList = () => {
                         task={editingTask}
                         onSubmit={editingTask ? handleUpdateTask : handleCreateTask}
                         onCancel={handleCancelForm}
+                        categories={categories}
                     />
                 </div>
             )}
@@ -198,7 +198,7 @@ const TaskList = () => {
                             task={task}
                             onEdit={handleEdit}
                             onDelete={handleDeleteTask}
-                            onStatusChange={handleStatusChange}
+                            onPriorityChange={handlePriorityChange}
                         />
                     ))}
                 </ul>

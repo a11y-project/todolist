@@ -2,9 +2,9 @@ import { supabase } from '../lib/supabase';
 
 export const tasksAPI = {
     getAll: async (filters = {}) => {
-        let query = supabase.from('tasks').select('*');
+        const { data: { user } } = await supabase.auth.getUser();
+        let query = supabase.from('tasks').select('*').eq('user_id', user.id);
 
-        if (filters.status) query = query.eq('status', filters.status);
         if (filters.priority) query = query.eq('priority', filters.priority);
         if (filters.category) query = query.eq('category', filters.category);
 
@@ -50,10 +50,13 @@ export const tasksAPI = {
     },
 
     getCategories: async () => {
+        const { data: { user } } = await supabase.auth.getUser();
         const { data, error } = await supabase
             .from('tasks')
             .select('category')
-            .not('category', 'is', null);
+            .eq('user_id', user.id)
+            .not('category', 'is', null)
+            .neq('category', '');
         if (error) throw error;
         const categories = [...new Set(data.map(r => r.category))];
         return { data: { categories } };

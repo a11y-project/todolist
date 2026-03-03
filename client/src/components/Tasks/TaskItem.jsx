@@ -1,26 +1,8 @@
-const TaskItem = ({ task, onEdit, onDelete, onStatusChange }) => {
+const TaskItem = ({ task, onEdit, onDelete, onPriorityChange }) => {
     const priorityColors = {
         low: 'bg-green-100 text-green-800',
         medium: 'bg-yellow-100 text-yellow-800',
         high: 'bg-red-100 text-red-800'
-    };
-
-    const priorityLabels = {
-        low: 'Basse',
-        medium: 'Moyenne',
-        high: 'Haute'
-    };
-
-    const statusColors = {
-        pending: 'bg-gray-100 text-gray-800',
-        in_progress: 'bg-blue-100 text-blue-800',
-        completed: 'bg-green-100 text-green-800'
-    };
-
-    const statusLabels = {
-        pending: 'En attente',
-        in_progress: 'En cours',
-        completed: 'Terminé'
     };
 
     const formatDate = (dateString) => {
@@ -33,11 +15,10 @@ const TaskItem = ({ task, onEdit, onDelete, onStatusChange }) => {
         });
     };
 
-    const isOverdue = task.deadline && new Date(task.deadline) < new Date() && task.status !== 'completed';
+    const isOverdue = task.deadline && new Date(task.deadline) < new Date();
 
     return (
         <li className={`bg-white rounded-lg shadow p-4 border-l-4 ${
-            task.status === 'completed' ? 'border-green-500 opacity-75' :
             isOverdue ? 'border-red-500' :
             task.priority === 'high' ? 'border-red-400' :
             task.priority === 'medium' ? 'border-yellow-400' : 'border-green-400'
@@ -45,7 +26,7 @@ const TaskItem = ({ task, onEdit, onDelete, onStatusChange }) => {
             <div className="flex items-start justify-between">
                 <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                        <h2 className={`text-lg font-medium ${task.status === 'completed' ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+                        <h2 className="text-lg font-medium text-gray-900">
                             {task.title}
                         </h2>
                         {task.category && (
@@ -60,37 +41,27 @@ const TaskItem = ({ task, onEdit, onDelete, onStatusChange }) => {
                     )}
 
                     <div className="flex flex-wrap items-center gap-2 text-sm">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${priorityColors[task.priority]}`}>
-                            Priorité {priorityLabels[task.priority]}
-                        </span>
-
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[task.status]}`}>
-                            {statusLabels[task.status]}
-                        </span>
-
-                        {task.deadline && (
-                            <span className={`text-xs ${isOverdue ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
-                                Échéance : {formatDate(task.deadline)}
-                                {isOverdue && ' (En retard)'}
-                            </span>
-                        )}
+                        <select
+                            value={task.priority}
+                            onChange={(e) => onPriorityChange(task.id, e.target.value)}
+                            aria-label="Priorité"
+                            className={`px-2 py-1 rounded-full text-xs font-medium border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 ${priorityColors[task.priority]}`}
+                        >
+                            <option value="low">Basse</option>
+                            <option value="medium">Moyenne</option>
+                            <option value="high">Haute</option>
+                        </select>
                     </div>
+
+                    {task.deadline && (
+                        <p className={`mt-1 text-xs ${isOverdue ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
+                            Échéance : {formatDate(task.deadline)}
+                            {isOverdue && ' (En retard)'}
+                        </p>
+                    )}
                 </div>
 
                 <div className="flex items-center gap-1 ml-4">
-                    {task.status !== 'completed' && (
-                        <button
-                            onClick={() => onStatusChange(task.id, 'completed')}
-                            className="p-2 text-green-600 hover:bg-green-50 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-green-500"
-                            title="Marquer comme terminé"
-                            aria-label="Marquer comme terminé"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                        </button>
-                    )}
-
                     <button
                         onClick={() => onEdit(task)}
                         className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
