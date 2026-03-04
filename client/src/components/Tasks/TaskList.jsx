@@ -108,6 +108,17 @@ const TaskList = () => {
         }
     };
 
+    const handleDeadlineChange = async (id, newDeadlineISO) => {
+        const previous = tasks.find(t => t.id === id);
+        setTasks(prev => prev.map(t => t.id === id ? { ...t, deadline: newDeadlineISO } : t));
+        try {
+            await tasksAPI.update(id, { ...previous, deadline: newDeadlineISO });
+        } catch (err) {
+            setTasks(prev => prev.map(t => t.id === id ? previous : t));
+            setError(err.message || "Échec de la mise à jour de l'échéance");
+        }
+    };
+
     const handleEdit = (task) => {
         setEditingTask(task);
         setShowForm(false);
@@ -199,6 +210,7 @@ const TaskList = () => {
                             onEdit={handleEdit}
                             onDelete={handleDeleteTask}
                             onPriorityChange={handlePriorityChange}
+                            onDeadlineChange={handleDeadlineChange}
                         />
                     ))}
                 </ul>

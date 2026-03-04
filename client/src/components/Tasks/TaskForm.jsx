@@ -1,9 +1,23 @@
-import { useState, useEffect, useRef } from 'react';
-import DatePicker, { registerLocale } from 'react-datepicker';
-import { fr } from 'date-fns/locale/fr';
-import 'react-datepicker/dist/react-datepicker.css';
+import { useState, useEffect, useRef, useMemo } from 'react';
 
-registerLocale('fr', fr);
+const formatDateFr = (date) =>
+    new Intl.DateTimeFormat('fr-FR', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+    }).format(date);
+
+const toDateKey = (date) => {
+    const d = new Date(date);
+    d.setHours(12, 0, 0, 0);
+    return d.toISOString().split('T')[0];
+};
+
+const parseFromKey = (key) => {
+    const [year, month, day] = key.split('-').map(Number);
+    return new Date(year, month - 1, day, 12);
+};
 
 const TaskForm = ({ task, onSubmit, onCancel, categories = [] }) => {
     const [formData, setFormData] = useState({
@@ -19,6 +33,18 @@ const TaskForm = ({ task, onSubmit, onCancel, categories = [] }) => {
     const titleInputRef = useRef(null);
     const formRef = useRef(null);
     const categoryWrapperRef = useRef(null);
+
+    const dateOptions = useMemo(() => {
+        const options = [];
+        const today = new Date();
+        today.setHours(12, 0, 0, 0);
+        for (let i = 0; i <= 365; i++) {
+            const d = new Date(today);
+            d.setDate(today.getDate() + i);
+            options.push(d);
+        }
+        return options;
+    }, []);
 
     useEffect(() => {
         if (task) {
@@ -48,14 +74,13 @@ const TaskForm = ({ task, onSubmit, onCancel, categories = [] }) => {
 
     useEffect(() => {
         const handleKeyDown = (e) => {
-            if (e.key === 'Escape') {
-                if (suggestions.length > 0) setSuggestions([]);
-                else onCancel();
+            if (e.key === 'Escape' && suggestions.length > 0) {
+                setSuggestions([]);
             }
         };
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [onCancel, suggestions]);
+    }, [suggestions]);
 
     useEffect(() => {
         const handleClickOutside = (e) => {
@@ -121,6 +146,19 @@ const TaskForm = ({ task, onSubmit, onCancel, categories = [] }) => {
             role="dialog"
             aria-labelledby="form-title"
         >
+            <div className="flex justify-end">
+                <button
+                    type="button"
+                    onClick={onCancel}
+                    className="p-1 text-gray-400 hover:text-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    aria-label="Fermer le formulaire"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+
             <div>
                 <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
                     Titre *
@@ -158,29 +196,23 @@ const TaskForm = ({ task, onSubmit, onCancel, categories = [] }) => {
                     <label htmlFor="deadline" className="block text-sm font-medium text-gray-700 mb-1">
                         Échéance
                     </label>
-                    <DatePicker
+                    <select
                         id="deadline"
-                        selected={formData.deadline}
-                        onChange={(date) => setFormData(prev => ({ ...prev, deadline: date }))}
-                        locale="fr"
-                        dateFormat="dd MMMM yyyy"
-                        minDate={new Date()}
-                        showMonthDropdown
-                        showYearDropdown
-                        dropdownMode="select"
+                        value={formData.deadline ? toDateKey(formData.deadline) : toDateKey(new Date())}
+                        onChange={(e) => setFormData(prev => ({ ...prev, deadline: parseFromKey(e.target.value) }))}
                         className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        wrapperClassName="w-full"
-                        placeholderText="Sélectionner une date"
-                        ariaLabelledBy="deadline"
-                        chooseDayAriaLabelPrefix="Choisir le"
-                        disabledDayAriaLabelPrefix="Indisponible le"
-                        monthAriaLabelPrefix="Mois"
-                        weekAriaLabelPrefix="Semaine"
-                        prevMonthAriaLabel="Mois précédent"
-                        nextMonthAriaLabel="Mois suivant"
-                        prevYearAriaLabel="Année précédente"
-                        nextYearAriaLabel="Année suivante"
-                    />
+                    >
+                        {formData.deadline && !dateOptions.some(d => toDateKey(d) === toDateKey(formData.deadline)) && (
+                            <option value={toDateKey(formData.deadline)}>
+                                {formatDateFr(formData.deadline)}
+                            </option>
+                        )}
+                        {dateOptions.map(date => (
+                            <option key={toDateKey(date)} value={toDateKey(date)}>
+                                {formatDateFr(date)}
+                            </option>
+                        ))}
+                    </select>
                 </div>
 
                 <div ref={categoryWrapperRef} className="relative">

@@ -1,21 +1,42 @@
-const TaskItem = ({ task, onEdit, onDelete, onPriorityChange }) => {
+import { useMemo } from 'react';
+
+const formatDateFr = (date) =>
+    new Intl.DateTimeFormat('fr-FR', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+    }).format(date);
+
+const toDateKey = (date) => {
+    const d = new Date(date);
+    d.setHours(12, 0, 0, 0);
+    return d.toISOString().split('T')[0];
+};
+
+const TaskItem = ({ task, onEdit, onDelete, onPriorityChange, onDeadlineChange }) => {
     const priorityColors = {
         low: 'bg-green-100 text-green-800',
         medium: 'bg-yellow-100 text-yellow-800',
         high: 'bg-red-100 text-red-800'
     };
 
-    const formatDate = (dateString) => {
-        if (!dateString) return null;
-        const date = new Date(dateString);
-        return date.toLocaleDateString('fr-FR', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric'
-        });
-    };
-
     const isOverdue = task.deadline && new Date(task.deadline) < new Date();
+
+    const dateOptions = useMemo(() => {
+        const options = [];
+        const today = new Date();
+        today.setHours(12, 0, 0, 0);
+        for (let i = 0; i <= 365; i++) {
+            const d = new Date(today);
+            d.setDate(today.getDate() + i);
+            options.push(d);
+        }
+        return options;
+    }, []);
+
+    const deadlineKey = task.deadline ? toDateKey(task.deadline) : null;
+    const deadlineInOptions = deadlineKey && dateOptions.some(d => toDateKey(d) === deadlineKey);
 
     return (
         <li className={`bg-white rounded-lg shadow p-4 border-l-4 ${
@@ -53,12 +74,33 @@ const TaskItem = ({ task, onEdit, onDelete, onPriorityChange }) => {
                         </select>
                     </div>
 
-                    {task.deadline && (
-                        <p className={`mt-1 text-xs ${isOverdue ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
-                            Échéance : {formatDate(task.deadline)}
-                            {isOverdue && ' (En retard)'}
-                        </p>
-                    )}
+                    <div className="mt-2">
+                        <select
+                            value={deadlineKey || ''}
+                            onChange={(e) => {
+                                const [year, month, day] = e.target.value.split('-').map(Number);
+                                const date = new Date(year, month - 1, day, 12);
+                                onDeadlineChange(task.id, date.toISOString());
+                            }}
+                            aria-label="Échéance"
+                            className={`text-xs px-2 py-1 rounded border cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                                isOverdue
+                                    ? 'border-red-300 bg-red-50 text-red-700 font-medium'
+                                    : 'border-gray-200 bg-gray-50 text-gray-600'
+                            }`}
+                        >
+                            {deadlineKey && !deadlineInOptions && (
+                                <option value={deadlineKey}>
+                                    {formatDateFr(new Date(task.deadline))} (en retard)
+                                </option>
+                            )}
+                            {dateOptions.map(date => (
+                                <option key={toDateKey(date)} value={toDateKey(date)}>
+                                    {formatDateFr(date)}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
 
                 <div className="flex items-center gap-1 ml-4">
