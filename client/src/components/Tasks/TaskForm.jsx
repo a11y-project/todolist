@@ -25,7 +25,8 @@ const TaskForm = ({ task, onSubmit, onCancel, categories = [] }) => {
         description: '',
         deadline: new Date(),
         category: '',
-        recurrence: ''
+        recurrence: '',
+        recurrence_end_date: null
     });
     const [loading, setLoading] = useState(false);
     const [suggestions, setSuggestions] = useState([]);
@@ -46,6 +47,22 @@ const TaskForm = ({ task, onSubmit, onCancel, categories = [] }) => {
         return options;
     }, []);
 
+    // Options pour la date de fin : dates après l'échéance choisie, jusqu'à 3 ans
+    const endDateOptions = useMemo(() => {
+        const options = [];
+        const start = formData.deadline ? new Date(formData.deadline) : new Date();
+        start.setHours(12, 0, 0, 0);
+        const limit = new Date(start);
+        limit.setFullYear(limit.getFullYear() + 3);
+        let d = new Date(start);
+        d.setDate(d.getDate() + 1);
+        while (d <= limit) {
+            options.push(new Date(d));
+            d.setDate(d.getDate() + 1);
+        }
+        return options;
+    }, [formData.deadline]);
+
     useEffect(() => {
         if (task) {
             setFormData({
@@ -53,7 +70,8 @@ const TaskForm = ({ task, onSubmit, onCancel, categories = [] }) => {
                 description: task.description || '',
                 deadline: task.deadline ? new Date(task.deadline) : new Date(),
                 category: task.category || '',
-                recurrence: task.recurrence || ''
+                recurrence: task.recurrence || '',
+                recurrence_end_date: null
             });
         } else {
             setFormData({
@@ -61,7 +79,8 @@ const TaskForm = ({ task, onSubmit, onCancel, categories = [] }) => {
                 description: '',
                 deadline: new Date(),
                 category: '',
-                recurrence: ''
+                recurrence: '',
+                recurrence_end_date: null
             });
         }
     }, [task]);
@@ -91,6 +110,13 @@ const TaskForm = ({ task, onSubmit, onCancel, categories = [] }) => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    // Réinitialise la date de fin si la récurrence est désactivée
+    useEffect(() => {
+        if (!formData.recurrence) {
+            setFormData(prev => ({ ...prev, recurrence_end_date: null }));
+        }
+    }, [formData.recurrence]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -124,14 +150,18 @@ const TaskForm = ({ task, onSubmit, onCancel, categories = [] }) => {
         setActiveSuggestion(-1);
     };
 
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         try {
             await onSubmit({
                 ...formData,
-                deadline: formData.deadline ? formData.deadline.toISOString() : null
+                deadline: formData.deadline ? formData.deadline.toISOString() : null,
+                recurrence_end_date: formData.recurrence_end_date
+                    ? (formData.recurrence_end_date instanceof Date
+                        ? formData.recurrence_end_date.toISOString()
+                        : formData.recurrence_end_date)
+                    : null
             });
         } finally {
             setLoading(false);
@@ -194,7 +224,7 @@ const TaskForm = ({ task, onSubmit, onCancel, categories = [] }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label htmlFor="deadline" className="block text-sm font-medium text-gray-700 mb-1">
-                        Échéance
+                        Première échéance
                     </label>
                     <select
                         id="deadline"
@@ -258,25 +288,51 @@ const TaskForm = ({ task, onSubmit, onCancel, categories = [] }) => {
                 </div>
             </div>
 
-            <div>
-                <label htmlFor="recurrence" className="block text-sm font-medium text-gray-700 mb-1">
-                    Récurrence
-                </label>
-                <select
-                    id="recurrence"
-                    name="recurrence"
-                    value={formData.recurrence}
-                    onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                    <option value="">Aucune récurrence</option>
-                    <option value="weekly">Toutes les semaines</option>
-                    <option value="biweekly">Toutes les 2 semaines</option>
-                    <option value="triweekly">Toutes les 3 semaines</option>
-                    <option value="monthly">Tous les mois</option>
-                    <option value="bimonthly">Tous les 2 mois</option>
-                    <option value="quarterly">Tous les trimestres</option>
-                </select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label htmlFor="recurrence" className="block text-sm font-medium text-gray-700 mb-1">
+                        Récurrence
+                    </label>
+                    <select
+                        id="recurrence"
+                        name="recurrence"
+                        value={formData.recurrence}
+                        onChange={handleChange}
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                        <option value="">Aucune récurrence</option>
+                        <option value="weekly">Toutes les semaines</option>
+                        <option value="biweekly">Toutes les 2 semaines</option>
+                        <option value="triweekly">Toutes les 3 semaines</option>
+                        <option value="monthly">Tous les mois</option>
+                        <option value="bimonthly">Tous les 2 mois</option>
+                        <option value="quarterly">Tous les trimestres</option>
+                    </select>
+                </div>
+
+                {formData.recurrence && (
+                    <div>
+                        <label htmlFor="recurrence_end_date" className="block text-sm font-medium text-gray-700 mb-1">
+                            Date de fin <span className="text-gray-400 font-normal">(facultatif — 1 an par défaut)</span>
+                        </label>
+                        <select
+                            id="recurrence_end_date"
+                            value={formData.recurrence_end_date ? toDateKey(formData.recurrence_end_date) : ''}
+                            onChange={(e) => setFormData(prev => ({
+                                ...prev,
+                                recurrence_end_date: e.target.value ? parseFromKey(e.target.value) : null
+                            }))}
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                            <option value="">Dans 1 an (par défaut)</option>
+                            {endDateOptions.map(date => (
+                                <option key={toDateKey(date)} value={toDateKey(date)}>
+                                    {formatDateFr(date)}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                )}
             </div>
 
             <div className="flex justify-end space-x-3 pt-4">

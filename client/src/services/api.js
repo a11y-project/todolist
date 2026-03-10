@@ -39,11 +39,38 @@ export const tasksAPI = {
         return { data: { task: data } };
     },
 
+    createBatch: async (tasksArray) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { error } = await supabase
+            .from('tasks')
+            .insert(tasksArray.map(t => ({ ...t, user_id: user.id })));
+        if (error) throw error;
+        return { data: {} };
+    },
+
     delete: async (id) => {
         const { error } = await supabase
             .from('tasks')
             .delete()
             .eq('id', id);
+        if (error) throw error;
+        return { data: {} };
+    },
+
+    deleteGroup: async (groupId) => {
+        const { error } = await supabase
+            .from('tasks')
+            .delete()
+            .eq('recurrence_group_id', groupId);
+        if (error) throw error;
+        return { data: {} };
+    },
+
+    updateGroup: async (groupId, updateData) => {
+        const { error } = await supabase
+            .from('tasks')
+            .update(updateData)
+            .eq('recurrence_group_id', groupId);
         if (error) throw error;
         return { data: {} };
     },

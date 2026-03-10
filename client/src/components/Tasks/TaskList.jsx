@@ -3,6 +3,39 @@ import { tasksAPI } from '../../services/api';
 import TaskItem from './TaskItem';
 import TaskForm from './TaskForm';
 
+const getNextDate = (date, recurrence) => {
+    const d = new Date(date);
+    switch (recurrence) {
+        case 'weekly':    d.setDate(d.getDate() + 7); break;
+        case 'biweekly':  d.setDate(d.getDate() + 14); break;
+        case 'triweekly': d.setDate(d.getDate() + 21); break;
+        case 'monthly':   d.setMonth(d.getMonth() + 1); break;
+        case 'bimonthly': d.setMonth(d.getMonth() + 2); break;
+        case 'quarterly': d.setMonth(d.getMonth() + 3); break;
+    }
+    return d;
+};
+
+const generateOccurrences = (taskData) => {
+    const { recurrence_end_date, ...baseTask } = taskData;
+    const groupId = crypto.randomUUID();
+    const endDate = recurrence_end_date
+        ? new Date(recurrence_end_date)
+        : (() => { const d = new Date(taskData.deadline); d.setFullYear(d.getFullYear() + 1); return d; })();
+
+    const occurrences = [];
+    let current = new Date(taskData.deadline);
+    while (current <= endDate) {
+        occurrences.push({
+            ...baseTask,
+            deadline: current.toISOString(),
+            recurrence_group_id: groupId
+        });
+        current = getNextDate(current, taskData.recurrence);
+    }
+    return occurrences;
+};
+
 const TaskList = () => {
     const [tasks, setTasks] = useState([]);
     const [categories, setCategories] = useState([]);
@@ -10,6 +43,7 @@ const TaskList = () => {
     const [error, setError] = useState('');
     const [showForm, setShowForm] = useState(false);
     const [editingTask, setEditingTask] = useState(null);
+    const [editScope, setEditScope] = useState('single'); // 'single' | 'all'
     const [categoryFilter, setCategoryFilter] = useState('');
 
     const formContainerRef = useRef(null);
@@ -42,7 +76,6 @@ const TaskList = () => {
         fetchCategories();
     }, []);
 
-    // Scroll vers le formulaire quand il s'ouvre
     useEffect(() => {
         if ((showForm || editingTask) && formContainerRef.current) {
             formContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -51,11 +84,15 @@ const TaskList = () => {
 
     const handleCreateTask = async (taskData) => {
         try {
-            await tasksAPI.create(taskData);
+            if (taskData.recurrence) {
+                const occurrences = generateOccurrences(taskData);
+                await tasksAPI.createBatch(occurrences);
+            } else {
+                await tasksAPI.create(taskData);
+            }
             setShowForm(false);
             fetchTasks();
             fetchCategories();
-            // Remettre le focus sur le bouton "Nouvelle Tâche"
             setTimeout(() => newTaskButtonRef.current?.focus(), 100);
         } catch (err) {
             setError(err.message || 'Échec de la création de la tâche');
@@ -64,8 +101,18 @@ const TaskList = () => {
 
     const handleUpdateTask = async (taskData) => {
         try {
-            await tasksAPI.update(editingTask.id, taskData);
+            if (editScope === 'all' && editingTask.recurrence_group_id) {
+                await tasksAPI.updateGroup(editingTask.recurrence_group_id, {
+                    title: taskData.title,
+                    description: taskData.description,
+                    category: taskData.category,
+                    recurrence: taskData.recurrence
+                });
+            } else {
+                await tasksAPI.update(editingTask.id, taskData);
+            }
             setEditingTask(null);
+            setEditScope('single');
             fetchTasks();
             fetchCategories();
         } catch (err) {
@@ -73,11 +120,13 @@ const TaskList = () => {
         }
     };
 
-    const handleDeleteTask = async (id) => {
-        if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette tâche ?')) return;
-
+    const handleDeleteTask = async (id, scope, groupId) => {
         try {
-            await tasksAPI.delete(id);
+            if (scope === 'all' && groupId) {
+                await tasksAPI.deleteGroup(groupId);
+            } else {
+                await tasksAPI.delete(id);
+            }
             fetchTasks();
             fetchCategories();
         } catch (err) {
@@ -96,52 +145,32 @@ const TaskList = () => {
         }
     };
 
-    const getNextDeadline = (deadline, recurrence) => {
-        const d = new Date(deadline);
-        switch (recurrence) {
-            case 'weekly':     d.setDate(d.getDate() + 7); break;
-            case 'biweekly':   d.setDate(d.getDate() + 14); break;
-            case 'triweekly':  d.setDate(d.getDate() + 21); break;
-            case 'monthly':    d.setMonth(d.getMonth() + 1); break;
-            case 'bimonthly':  d.setMonth(d.getMonth() + 2); break;
-            case 'quarterly':  d.setMonth(d.getMonth() + 3); break;
-        }
-        return d.toISOString();
-    };
-
     const handleTaskDone = async (task) => {
         try {
             await tasksAPI.delete(task.id);
-            if (task.recurrence && task.deadline) {
-                await tasksAPI.create({
-                    title: task.title,
-                    description: task.description,
-                    category: task.category,
-                    recurrence: task.recurrence,
-                    deadline: getNextDeadline(task.deadline, task.recurrence)
-                });
-            }
             fetchTasks();
         } catch (err) {
             setError(err.message || 'Échec de la validation de la tâche');
         }
     };
 
-    const handleEdit = (task) => {
+    const handleEdit = (task, scope) => {
         setEditingTask(task);
+        setEditScope(scope);
         setShowForm(false);
     };
 
     const handleCancelForm = () => {
         setShowForm(false);
         setEditingTask(null);
-        // Remettre le focus sur le bouton "Nouvelle Tâche"
+        setEditScope('single');
         setTimeout(() => newTaskButtonRef.current?.focus(), 100);
     };
 
     const handleNewTask = () => {
         setShowForm(true);
         setEditingTask(null);
+        setEditScope('single');
     };
 
     const groupedTasks = useMemo(() => {
@@ -156,7 +185,7 @@ const TaskList = () => {
             map.get(key).tasks.push(task);
         }
         return Array.from(map.values());
-    }, [tasks]);
+    }, [tasks, categoryFilter]);
 
     return (
         <div className="max-w-4xl mx-auto px-4 py-8">
@@ -176,16 +205,16 @@ const TaskList = () => {
                             ))}
                         </select>
                     )}
-                <button
-                    ref={newTaskButtonRef}
-                    onClick={handleNewTask}
-                    className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-                    </svg>
-                    Nouvelle Tâche
-                </button>
+                    <button
+                        ref={newTaskButtonRef}
+                        onClick={handleNewTask}
+                        className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                        </svg>
+                        Nouvelle Tâche
+                    </button>
                 </div>
             </div>
 
@@ -209,9 +238,14 @@ const TaskList = () => {
                     role="region"
                     aria-label={editingTask ? 'Modifier la tâche' : 'Créer une nouvelle tâche'}
                 >
-                    <h2 id="form-title" className="text-lg font-semibold mb-4">
+                    <h2 id="form-title" className="text-lg font-semibold mb-1">
                         {editingTask ? 'Modifier la Tâche' : 'Créer une Nouvelle Tâche'}
                     </h2>
+                    {editingTask && editScope === 'all' && (
+                        <p className="text-sm text-violet-600 mb-4">
+                            Modification de toutes les occurrences de cette série
+                        </p>
+                    )}
                     <TaskForm
                         task={editingTask}
                         onSubmit={editingTask ? handleUpdateTask : handleCreateTask}
