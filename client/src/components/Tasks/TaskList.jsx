@@ -51,6 +51,7 @@ const TaskList = () => {
     const [editingTask, setEditingTask] = useState(null);
     const [editScope, setEditScope] = useState('single');
     const [categoryFilter, setCategoryFilter] = useState('');
+    const [visibleMonths, setVisibleMonths] = useState(3);
 
     const formContainerRef = useRef(null);
     const newTaskButtonRef = useRef(null);
@@ -187,6 +188,15 @@ const TaskList = () => {
         return Array.from(map.values());
     }, [tasks, categoryFilter]);
 
+    const { visibleGroups, hiddenCount } = useMemo(() => {
+        const cutoff = new Date();
+        cutoff.setMonth(cutoff.getMonth() + visibleMonths);
+        cutoff.setHours(23, 59, 59, 999);
+        const visible = groupedTasks.filter(g => g.key === 'sans-echeance' || new Date(g.key) <= cutoff);
+        const hidden = groupedTasks.filter(g => g.key !== 'sans-echeance' && new Date(g.key) > cutoff);
+        return { visibleGroups: visible, hiddenCount: hidden.reduce((acc, g) => acc + g.tasks.length, 0) };
+    }, [groupedTasks, visibleMonths]);
+
     return (
         <div className="max-w-4xl mx-auto px-4 py-8">
             <div className="flex justify-between items-center mb-6">
@@ -200,7 +210,7 @@ const TaskList = () => {
                     {categories.length > 0 && (
                         <select
                             value={categoryFilter}
-                            onChange={(e) => setCategoryFilter(e.target.value)}
+                            onChange={(e) => { setCategoryFilter(e.target.value); setVisibleMonths(3); }}
                             aria-label="Filtrer par catégorie"
                             className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         >
@@ -273,7 +283,7 @@ const TaskList = () => {
                 </div>
             ) : (
                 <div className="space-y-8">
-                    {groupedTasks.map(({ label, key, tasks: group }) => (
+                    {visibleGroups.map(({ label, key, tasks: group }) => (
                         <section key={key}>
                             <h2 className="text-base font-semibold text-gray-500 uppercase tracking-wide mb-3 capitalize">
                                 {label}
@@ -295,7 +305,18 @@ const TaskList = () => {
                 </div>
             )}
 
-            <div className="mt-6 text-center text-sm text-gray-500">
+            {hiddenCount > 0 && (
+                <div className="mt-6 text-center">
+                    <button
+                        onClick={() => setVisibleMonths(v => v + 3)}
+                        className="px-5 py-2 border border-indigo-300 text-indigo-600 rounded-md hover:bg-indigo-50 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                    >
+                        Afficher plus <span className="text-indigo-400">({hiddenCount} tâche{hiddenCount > 1 ? 's' : ''})</span>
+                    </button>
+                </div>
+            )}
+
+            <div className="mt-4 text-center text-sm text-gray-500">
                 {tasks.length} tâche{tasks.length !== 1 ? 's' : ''} au total
             </div>
         </div>
