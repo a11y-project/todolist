@@ -96,6 +96,37 @@ const TaskList = () => {
         }
     };
 
+    const getNextDeadline = (deadline, recurrence) => {
+        const d = new Date(deadline);
+        switch (recurrence) {
+            case 'weekly':     d.setDate(d.getDate() + 7); break;
+            case 'biweekly':   d.setDate(d.getDate() + 14); break;
+            case 'triweekly':  d.setDate(d.getDate() + 21); break;
+            case 'monthly':    d.setMonth(d.getMonth() + 1); break;
+            case 'bimonthly':  d.setMonth(d.getMonth() + 2); break;
+            case 'quarterly':  d.setMonth(d.getMonth() + 3); break;
+        }
+        return d.toISOString();
+    };
+
+    const handleTaskDone = async (task) => {
+        try {
+            await tasksAPI.delete(task.id);
+            if (task.recurrence && task.deadline) {
+                await tasksAPI.create({
+                    title: task.title,
+                    description: task.description,
+                    category: task.category,
+                    recurrence: task.recurrence,
+                    deadline: getNextDeadline(task.deadline, task.recurrence)
+                });
+            }
+            fetchTasks();
+        } catch (err) {
+            setError(err.message || 'Échec de la validation de la tâche');
+        }
+    };
+
     const handleEdit = (task) => {
         setEditingTask(task);
         setShowForm(false);
@@ -216,6 +247,7 @@ const TaskList = () => {
                                         onEdit={handleEdit}
                                         onDelete={handleDeleteTask}
                                         onDeadlineChange={handleDeadlineChange}
+                                        onDone={handleTaskDone}
                                     />
                                 ))}
                             </ul>

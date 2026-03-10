@@ -24,7 +24,8 @@ const TaskForm = ({ task, onSubmit, onCancel, categories = [] }) => {
         title: '',
         description: '',
         deadline: new Date(),
-        category: ''
+        category: '',
+        recurrence: ''
     });
     const [loading, setLoading] = useState(false);
     const [suggestions, setSuggestions] = useState([]);
@@ -51,14 +52,16 @@ const TaskForm = ({ task, onSubmit, onCancel, categories = [] }) => {
                 title: task.title || '',
                 description: task.description || '',
                 deadline: task.deadline ? new Date(task.deadline) : new Date(),
-                category: task.category || ''
+                category: task.category || '',
+                recurrence: task.recurrence || ''
             });
         } else {
             setFormData({
                 title: '',
                 description: '',
                 deadline: new Date(),
-                category: ''
+                category: '',
+                recurrence: ''
             });
         }
     }, [task]);
@@ -253,6 +256,27 @@ const TaskForm = ({ task, onSubmit, onCancel, categories = [] }) => {
                         ))}
                     </ul>
                 </div>
+            </div>
+
+            <div>
+                <label htmlFor="recurrence" className="block text-sm font-medium text-gray-700 mb-1">
+                    Récurrence
+                </label>
+                <select
+                    id="recurrence"
+                    name="recurrence"
+                    value={formData.recurrence}
+                    onChange={handleChange}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                    <option value="">Aucune récurrence</option>
+                    <option value="weekly">Toutes les semaines</option>
+                    <option value="biweekly">Toutes les 2 semaines</option>
+                    <option value="triweekly">Toutes les 3 semaines</option>
+                    <option value="monthly">Tous les mois</option>
+                    <option value="bimonthly">Tous les 2 mois</option>
+                    <option value="quarterly">Tous les trimestres</option>
+                </select>
             </div>
 
             <div className="flex justify-end space-x-3 pt-4">

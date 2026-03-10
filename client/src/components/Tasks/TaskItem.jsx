@@ -14,7 +14,16 @@ const toDateKey = (date) => {
     return d.toISOString().split('T')[0];
 };
 
-const TaskItem = ({ task, onEdit, onDelete, onDeadlineChange }) => {
+const RECURRENCE_LABELS = {
+    weekly: 'Hebdo',
+    biweekly: '2 sem.',
+    triweekly: '3 sem.',
+    monthly: 'Mensuel',
+    bimonthly: '2 mois',
+    quarterly: 'Trimestriel'
+};
+
+const TaskItem = ({ task, onEdit, onDelete, onDeadlineChange, onDone }) => {
     const isOverdue = task.deadline && new Date(task.deadline) < new Date();
 
     const dateOptions = useMemo(() => {
@@ -43,6 +52,11 @@ const TaskItem = ({ task, onEdit, onDelete, onDeadlineChange }) => {
                             )}
                             {task.title}
                         </h3>
+                        {task.recurrence && (
+                            <span className="px-2 py-0.5 bg-violet-100 text-violet-700 text-xs rounded-full">
+                                ↻ {RECURRENCE_LABELS[task.recurrence]}
+                            </span>
+                        )}
                     </div>
 
                     {task.description && (
@@ -79,6 +93,17 @@ const TaskItem = ({ task, onEdit, onDelete, onDeadlineChange }) => {
                 </div>
 
                 <div className="flex items-center gap-1 ml-4">
+                    <button
+                        onClick={() => onDone(task)}
+                        className="p-2 text-green-600 hover:bg-green-50 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-green-500"
+                        title={task.recurrence ? 'Marquer comme fait (recrée la prochaine occurrence)' : 'Marquer comme fait'}
+                        aria-label="Marquer comme fait"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                    </button>
+
                     <button
                         onClick={() => onEdit(task)}
                         className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
