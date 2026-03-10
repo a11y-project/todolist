@@ -10,6 +10,7 @@ const TaskList = () => {
     const [error, setError] = useState('');
     const [showForm, setShowForm] = useState(false);
     const [editingTask, setEditingTask] = useState(null);
+    const [categoryFilter, setCategoryFilter] = useState('');
 
     const formContainerRef = useRef(null);
     const newTaskButtonRef = useRef(null);
@@ -114,7 +115,8 @@ const TaskList = () => {
 
     const groupedTasks = useMemo(() => {
         const map = new Map();
-        for (const task of tasks) {
+        const filtered = categoryFilter ? tasks.filter(t => t.category === categoryFilter) : tasks;
+        for (const task of filtered) {
             const key = task.deadline ? task.deadline.split('T')[0] : 'sans-echeance';
             const label = task.deadline
                 ? new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(task.deadline))
@@ -129,6 +131,20 @@ const TaskList = () => {
         <div className="max-w-4xl mx-auto px-4 py-8">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold text-gray-900">Mes Tâches</h1>
+                <div className="flex items-center gap-3">
+                    {categories.length > 0 && (
+                        <select
+                            value={categoryFilter}
+                            onChange={(e) => setCategoryFilter(e.target.value)}
+                            aria-label="Filtrer par catégorie"
+                            className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                            <option value="">Toutes les catégories</option>
+                            {categories.map(cat => (
+                                <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                        </select>
+                    )}
                 <button
                     ref={newTaskButtonRef}
                     onClick={handleNewTask}
@@ -139,6 +155,7 @@ const TaskList = () => {
                     </svg>
                     Nouvelle Tâche
                 </button>
+                </div>
             </div>
 
             {error && (
