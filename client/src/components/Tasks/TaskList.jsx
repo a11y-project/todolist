@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { tasksAPI } from '../../services/api';
 import TaskItem from './TaskItem';
 import TaskForm from './TaskForm';
@@ -123,6 +123,19 @@ const TaskList = () => {
         setEditingTask(null);
     };
 
+    const groupedTasks = useMemo(() => {
+        const map = new Map();
+        for (const task of tasks) {
+            const key = task.deadline ? task.deadline.split('T')[0] : 'sans-echeance';
+            const label = task.deadline
+                ? new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(task.deadline))
+                : 'Sans échéance';
+            if (!map.has(key)) map.set(key, { label, key, tasks: [] });
+            map.get(key).tasks.push(task);
+        }
+        return Array.from(map.values());
+    }, [tasks]);
+
     return (
         <div className="max-w-4xl mx-auto px-4 py-8">
             <div className="flex justify-between items-center mb-6">
@@ -189,17 +202,26 @@ const TaskList = () => {
                     <p className="text-gray-500">Aucune tâche trouvée. Créez votre première tâche !</p>
                 </div>
             ) : (
-                <ul className="space-y-4">
-                    {tasks.map(task => (
-                        <TaskItem
-                            key={task.id}
-                            task={task}
-                            onEdit={handleEdit}
-                            onDelete={handleDeleteTask}
-                            onDeadlineChange={handleDeadlineChange}
-                        />
+                <div className="space-y-8">
+                    {groupedTasks.map(({ label, key, tasks: group }) => (
+                        <section key={key}>
+                            <h2 className="text-base font-semibold text-gray-500 uppercase tracking-wide mb-3 capitalize">
+                                {label}
+                            </h2>
+                            <ul className="space-y-4">
+                                {group.map(task => (
+                                    <TaskItem
+                                        key={task.id}
+                                        task={task}
+                                        onEdit={handleEdit}
+                                        onDelete={handleDeleteTask}
+                                        onDeadlineChange={handleDeadlineChange}
+                                    />
+                                ))}
+                            </ul>
+                        </section>
                     ))}
-                </ul>
+                </div>
             )}
 
             <div className="mt-6 text-center text-sm text-gray-500">

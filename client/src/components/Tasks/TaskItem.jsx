@@ -37,9 +37,9 @@ const TaskItem = ({ task, onEdit, onDelete, onDeadlineChange }) => {
             <div className="flex items-start justify-between">
                 <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                        <h2 className="text-lg font-medium text-gray-900">
+                        <h3 className="text-lg font-medium text-gray-900">
                             {task.title}
-                        </h2>
+                        </h3>
                         {task.category && (
                             <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs rounded-full">
                                 {task.category}
