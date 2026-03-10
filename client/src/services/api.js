@@ -19,6 +19,7 @@ export const tasksAPI = {
     create: async (taskData) => {
         const { data: { user } } = await supabase.auth.getUser();
         const { recurrence_end_date: _red, ...cleanData } = taskData;
+        if (!cleanData.recurrence) cleanData.recurrence = null;
         const { data, error } = await supabase
             .from('tasks')
             .insert({ ...cleanData, user_id: user.id })
@@ -30,6 +31,7 @@ export const tasksAPI = {
 
     update: async (id, taskData) => {
         const { id: _id, user_id: _uid, created_at: _ca, recurrence_end_date: _red, ...updateData } = taskData;
+        if (!updateData.recurrence) updateData.recurrence = null;
         const { data, error } = await supabase
             .from('tasks')
             .update(updateData)
