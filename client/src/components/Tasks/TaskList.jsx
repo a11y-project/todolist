@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { tasksAPI } from '../../services/api';
 import TaskItem from './TaskItem';
 import TaskForm from './TaskForm';
-import TaskFilters from './TaskFilters';
 
 const TaskList = () => {
     const [tasks, setTasks] = useState([]);
@@ -11,11 +10,6 @@ const TaskList = () => {
     const [error, setError] = useState('');
     const [showForm, setShowForm] = useState(false);
     const [editingTask, setEditingTask] = useState(null);
-    const [filters, setFilters] = useState({
-        category: '',
-        sortBy: 'deadline',
-        sortOrder: 'ASC'
-    });
 
     const formContainerRef = useRef(null);
     const newTaskButtonRef = useRef(null);
@@ -23,12 +17,7 @@ const TaskList = () => {
     const fetchTasks = async () => {
         try {
             setLoading(true);
-            const params = {};
-            if (filters.category) params.category = filters.category;
-            params.sortBy = filters.sortBy;
-            params.sortOrder = filters.sortOrder;
-
-            const response = await tasksAPI.getAll(params);
+            const response = await tasksAPI.getAll({ sortBy: 'deadline', sortOrder: 'ASC' });
             setTasks(response.data.tasks);
         } catch (err) {
             setError('Échec du chargement des tâches');
@@ -50,7 +39,7 @@ const TaskList = () => {
     useEffect(() => {
         fetchTasks();
         fetchCategories();
-    }, [filters]);
+    }, []);
 
     // Scroll vers le formulaire quand il s'ouvre
     useEffect(() => {
@@ -183,12 +172,6 @@ const TaskList = () => {
                     />
                 </div>
             )}
-
-            <TaskFilters
-                filters={filters}
-                setFilters={setFilters}
-                categories={categories}
-            />
 
             {loading ? (
                 <div className="flex justify-center py-12" aria-label="Chargement">
