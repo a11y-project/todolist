@@ -36,24 +36,37 @@ const generateOccurrences = (taskData) => {
     return occurrences;
 };
 
+const CACHE_KEY = 'todolist_tasks_cache';
+
 const TaskList = () => {
-    const [tasks, setTasks] = useState([]);
-    const [categories, setCategories] = useState([]);
+    const [tasks, setTasks] = useState(() => {
+        try {
+            const cached = localStorage.getItem(CACHE_KEY);
+            return cached ? JSON.parse(cached) : [];
+        } catch { return []; }
+    });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [showForm, setShowForm] = useState(false);
     const [editingTask, setEditingTask] = useState(null);
-    const [editScope, setEditScope] = useState('single'); // 'single' | 'all'
+    const [editScope, setEditScope] = useState('single');
     const [categoryFilter, setCategoryFilter] = useState('');
 
     const formContainerRef = useRef(null);
     const newTaskButtonRef = useRef(null);
 
+    // Catégories dérivées des tâches, sans appel API supplémentaire
+    const categories = useMemo(() =>
+        [...new Set(tasks.map(t => t.category).filter(Boolean))].sort()
+    , [tasks]);
+
     const fetchTasks = async () => {
         try {
             setLoading(true);
             const response = await tasksAPI.getAll({ sortBy: 'deadline', sortOrder: 'ASC' });
-            setTasks(response.data.tasks);
+            const fetched = response.data.tasks;
+            setTasks(fetched);
+            try { localStorage.setItem(CACHE_KEY, JSON.stringify(fetched)); } catch {}
         } catch (err) {
             setError('Échec du chargement des tâches');
             console.error(err);
@@ -62,18 +75,8 @@ const TaskList = () => {
         }
     };
 
-    const fetchCategories = async () => {
-        try {
-            const response = await tasksAPI.getCategories();
-            setCategories(response.data.categories);
-        } catch (err) {
-            console.error('Échec du chargement des catégories', err);
-        }
-    };
-
     useEffect(() => {
         fetchTasks();
-        fetchCategories();
     }, []);
 
     useEffect(() => {
@@ -92,7 +95,6 @@ const TaskList = () => {
             }
             setShowForm(false);
             fetchTasks();
-            fetchCategories();
             setTimeout(() => newTaskButtonRef.current?.focus(), 100);
         } catch (err) {
             setError(err.message || 'Échec de la création de la tâche');
@@ -114,7 +116,6 @@ const TaskList = () => {
             setEditingTask(null);
             setEditScope('single');
             fetchTasks();
-            fetchCategories();
         } catch (err) {
             setError(err.message || 'Échec de la modification de la tâche');
         }
@@ -128,7 +129,6 @@ const TaskList = () => {
                 await tasksAPI.delete(id);
             }
             fetchTasks();
-            fetchCategories();
         } catch (err) {
             setError(err.message || 'Échec de la suppression de la tâche');
         }
@@ -190,7 +190,12 @@ const TaskList = () => {
     return (
         <div className="max-w-4xl mx-auto px-4 py-8">
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">Mes Tâches</h1>
+                <h1 className="text-2xl font-bold text-gray-900">
+                    Mes Tâches
+                    {loading && tasks.length > 0 && (
+                        <span className="ml-2 inline-block w-3 h-3 rounded-full border-2 border-indigo-400 border-t-transparent animate-spin align-middle" aria-label="Mise à jour…" />
+                    )}
+                </h1>
                 <div className="flex items-center gap-3">
                     {categories.length > 0 && (
                         <select
@@ -255,7 +260,7 @@ const TaskList = () => {
                 </div>
             )}
 
-            {loading ? (
+            {loading && tasks.length === 0 ? (
                 <div className="flex justify-center py-12" aria-label="Chargement">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
                 </div>

@@ -75,18 +75,6 @@ export const tasksAPI = {
         return { data: {} };
     },
 
-    getCategories: async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        const { data, error } = await supabase
-            .from('tasks')
-            .select('category')
-            .eq('user_id', user.id)
-            .not('category', 'is', null)
-            .neq('category', '');
-        if (error) throw error;
-        const categories = [...new Set(data.map(r => r.category))];
-        return { data: { categories } };
-    }
 };
 
 export const authAPI = {};
