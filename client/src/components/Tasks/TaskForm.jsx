@@ -24,7 +24,6 @@ const TaskForm = ({ task, onSubmit, onCancel, categories = [] }) => {
         title: '',
         description: '',
         deadline: new Date(),
-        priority: 'medium',
         category: ''
     });
     const [loading, setLoading] = useState(false);
@@ -52,7 +51,6 @@ const TaskForm = ({ task, onSubmit, onCancel, categories = [] }) => {
                 title: task.title || '',
                 description: task.description || '',
                 deadline: task.deadline ? new Date(task.deadline) : new Date(),
-                priority: task.priority || 'medium',
                 category: task.category || ''
             });
         } else {
@@ -60,7 +58,6 @@ const TaskForm = ({ task, onSubmit, onCancel, categories = [] }) => {
                 title: '',
                 description: '',
                 deadline: new Date(),
-                priority: 'medium',
                 category: ''
             });
         }
@@ -256,23 +253,6 @@ const TaskForm = ({ task, onSubmit, onCancel, categories = [] }) => {
                         ))}
                     </ul>
                 </div>
-            </div>
-
-            <div>
-                <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-1">
-                    Priorité
-                </label>
-                <select
-                    id="priority"
-                    name="priority"
-                    value={formData.priority}
-                    onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                    <option value="low">Basse</option>
-                    <option value="medium">Moyenne</option>
-                    <option value="high">Haute</option>
-                </select>
             </div>
 
             <div className="flex justify-end space-x-3 pt-4">

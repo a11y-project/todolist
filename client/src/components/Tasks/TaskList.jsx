@@ -12,7 +12,6 @@ const TaskList = () => {
     const [showForm, setShowForm] = useState(false);
     const [editingTask, setEditingTask] = useState(null);
     const [filters, setFilters] = useState({
-        priority: '',
         category: '',
         sortBy: 'deadline',
         sortOrder: 'ASC'
@@ -25,7 +24,6 @@ const TaskList = () => {
         try {
             setLoading(true);
             const params = {};
-            if (filters.priority) params.priority = filters.priority;
             if (filters.category) params.category = filters.category;
             params.sortBy = filters.sortBy;
             params.sortOrder = filters.sortOrder;
@@ -94,17 +92,6 @@ const TaskList = () => {
             fetchCategories();
         } catch (err) {
             setError(err.message || 'Échec de la suppression de la tâche');
-        }
-    };
-
-    const handlePriorityChange = async (id, newPriority) => {
-        const previous = tasks.find(t => t.id === id);
-        setTasks(prev => prev.map(t => t.id === id ? { ...t, priority: newPriority } : t));
-        try {
-            await tasksAPI.update(id, { ...previous, priority: newPriority });
-        } catch (err) {
-            setTasks(prev => prev.map(t => t.id === id ? previous : t));
-            setError(err.message || 'Échec de la mise à jour de la priorité');
         }
     };
 
@@ -209,7 +196,6 @@ const TaskList = () => {
                             task={task}
                             onEdit={handleEdit}
                             onDelete={handleDeleteTask}
-                            onPriorityChange={handlePriorityChange}
                             onDeadlineChange={handleDeadlineChange}
                         />
                     ))}

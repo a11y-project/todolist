@@ -10,14 +10,13 @@ const TaskFilters = ({ filters, setFilters, categories }) => {
 
     const clearFilters = () => {
         setFilters({
-            priority: '',
             category: '',
             sortBy: 'deadline',
             sortOrder: 'ASC'
         });
     };
 
-    const activeCount = [filters.priority, filters.category].filter(Boolean).length;
+    const activeCount = [filters.category].filter(Boolean).length;
     const isNonDefaultSort = filters.sortBy !== 'deadline' || filters.sortOrder !== 'ASC';
 
     return (
@@ -53,23 +52,6 @@ const TaskFilters = ({ filters, setFilters, categories }) => {
                     <div className="flex flex-wrap gap-4 items-end mt-3">
                         <div className="flex-1 min-w-[150px]">
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Priorité
-                            </label>
-                            <select
-                                name="priority"
-                                value={filters.priority}
-                                onChange={handleChange}
-                                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            >
-                                <option value="">Toutes les priorités</option>
-                                <option value="low">Basse</option>
-                                <option value="medium">Moyenne</option>
-                                <option value="high">Haute</option>
-                            </select>
-                        </div>
-
-                        <div className="flex-1 min-w-[150px]">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Catégorie
                             </label>
                             <select
@@ -97,7 +79,6 @@ const TaskFilters = ({ filters, setFilters, categories }) => {
                             >
                                 <option value="deadline">Échéance</option>
                                 <option value="created_at">Date de création</option>
-                                <option value="priority">Priorité</option>
                                 <option value="title">Titre</option>
                             </select>
                         </div>

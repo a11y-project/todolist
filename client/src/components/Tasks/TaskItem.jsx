@@ -14,13 +14,7 @@ const toDateKey = (date) => {
     return d.toISOString().split('T')[0];
 };
 
-const TaskItem = ({ task, onEdit, onDelete, onPriorityChange, onDeadlineChange }) => {
-    const priorityColors = {
-        low: 'bg-green-100 text-green-800',
-        medium: 'bg-yellow-100 text-yellow-800',
-        high: 'bg-red-100 text-red-800'
-    };
-
+const TaskItem = ({ task, onEdit, onDelete, onDeadlineChange }) => {
     const isOverdue = task.deadline && new Date(task.deadline) < new Date();
 
     const dateOptions = useMemo(() => {
@@ -39,11 +33,7 @@ const TaskItem = ({ task, onEdit, onDelete, onPriorityChange, onDeadlineChange }
     const deadlineInOptions = deadlineKey && dateOptions.some(d => toDateKey(d) === deadlineKey);
 
     return (
-        <li className={`bg-white rounded-lg shadow p-4 border-l-4 ${
-            isOverdue ? 'border-red-500' :
-            task.priority === 'high' ? 'border-red-400' :
-            task.priority === 'medium' ? 'border-yellow-400' : 'border-green-400'
-        }`}>
+        <li className={`bg-white rounded-lg shadow p-4 border-l-4 ${isOverdue ? 'border-red-500' : 'border-indigo-300'}`}>
             <div className="flex items-start justify-between">
                 <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
@@ -60,19 +50,6 @@ const TaskItem = ({ task, onEdit, onDelete, onPriorityChange, onDeadlineChange }
                     {task.description && (
                         <p className="text-gray-600 text-sm mb-3">{task.description}</p>
                     )}
-
-                    <div className="flex flex-wrap items-center gap-2 text-sm">
-                        <select
-                            value={task.priority}
-                            onChange={(e) => onPriorityChange(task.id, e.target.value)}
-                            aria-label="Priorité"
-                            className={`px-2 py-1 rounded-full text-xs font-medium border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 ${priorityColors[task.priority]}`}
-                        >
-                            <option value="low">Basse</option>
-                            <option value="medium">Moyenne</option>
-                            <option value="high">Haute</option>
-                        </select>
-                    </div>
 
                     <div className="mt-2">
                         <select
