@@ -18,9 +18,10 @@ export const tasksAPI = {
 
     create: async (taskData) => {
         const { data: { user } } = await supabase.auth.getUser();
+        const { recurrence_end_date: _red, ...cleanData } = taskData;
         const { data, error } = await supabase
             .from('tasks')
-            .insert({ ...taskData, user_id: user.id })
+            .insert({ ...cleanData, user_id: user.id })
             .select()
             .single();
         if (error) throw error;
