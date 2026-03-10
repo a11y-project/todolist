@@ -5,7 +5,6 @@ export const tasksAPI = {
         const { data: { user } } = await supabase.auth.getUser();
         let query = supabase.from('tasks').select('*').eq('user_id', user.id);
 
-        if (filters.priority) query = query.eq('priority', filters.priority);
         if (filters.category) query = query.eq('category', filters.category);
 
         const sortField = filters.sortBy || 'created_at';
