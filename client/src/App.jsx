@@ -6,8 +6,6 @@ import ProtectedRoute from './components/Layout/ProtectedRoute';
 import Login from './components/Auth/Login';
 import Register from './components/Auth/Register';
 import TaskList from './components/Tasks/TaskList';
-import LegalMentions from './components/Layout/LegalMentions';
-
 function App() {
     const { isAuthenticated, loading } = useAuth();
 
@@ -44,7 +42,6 @@ function App() {
                             isAuthenticated ? <Navigate to="/" replace /> : <Register />
                         }
                     />
-                    <Route path="/mentions-legales" element={<LegalMentions />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
             </main>
