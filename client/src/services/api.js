@@ -49,6 +49,24 @@ export const tasksAPI = {
         return { data: {} };
     },
 
+    // Reporte à aujourd'hui (midi, comme le formulaire) toutes les tâches dont l'échéance est passée
+    rolloverOverdue: async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+        const todayNoon = new Date();
+        todayNoon.setHours(12, 0, 0, 0);
+
+        const { data, error } = await supabase
+            .from('tasks')
+            .update({ deadline: todayNoon.toISOString() })
+            .eq('user_id', user.id)
+            .lt('deadline', startOfToday.toISOString())
+            .select('id');
+        if (error) throw error;
+        return { data: { count: data.length } };
+    },
+
     getCategories: async () => {
         const { data: { user } } = await supabase.auth.getUser();
         const { data, error } = await supabase

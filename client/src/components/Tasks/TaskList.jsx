@@ -49,9 +49,19 @@ const TaskList = () => {
         }
     };
 
+    // Report automatique des tâches en retard sur aujourd'hui, une fois à l'ouverture
+    const rolloverDone = useRef(null);
+    if (rolloverDone.current === null) {
+        rolloverDone.current = tasksAPI.rolloverOverdue().catch((err) => {
+            console.error('Échec du report des tâches en retard', err);
+        });
+    }
+
     useEffect(() => {
-        fetchTasks();
-        fetchCategories();
+        rolloverDone.current.then(() => {
+            fetchTasks();
+            fetchCategories();
+        });
     }, [filters]);
 
     // Scroll vers le formulaire quand il s'ouvre
